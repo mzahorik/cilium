@@ -2695,10 +2695,6 @@ func (c *DaemonConfig) Validate(vp *viper.Viper) error {
 		return fmt.Errorf("RouteMetric '%d' cannot be negative", c.RouteMetric)
 	}
 
-	if c.IPAM == ipamOption.IPAMENI && c.EnableIPv6 {
-		return fmt.Errorf("IPv6 cannot be enabled in ENI IPAM mode")
-	}
-
 	if c.EnableIPv6NDP {
 		if !c.EnableIPv6 {
 			return fmt.Errorf("IPv6NDP cannot be enabled when IPv6 is not enabled")
@@ -3325,6 +3321,10 @@ func (c *DaemonConfig) Populate(vp *viper.Viper) {
 		if c.EnableIPv6 {
 			c.K8sRequireIPv6PodCIDR = true
 		}
+	}
+
+	if c.IPAM == ipamOption.IPAMENI && c.EnableIPv6 {
+		c.K8sRequireIPv6PodCIDR = true
 	}
 
 	c.KubeProxyReplacementHealthzBindAddr = vp.GetString(KubeProxyReplacementHealthzBindAddr)

@@ -22,8 +22,9 @@ import (
 	"github.com/cilium/cilium/pkg/aws/types"
 	"github.com/cilium/cilium/pkg/cidr"
 	ipPkg "github.com/cilium/cilium/pkg/ip"
-	"github.com/cilium/cilium/pkg/ipam/option"
+	ipamOption "github.com/cilium/cilium/pkg/ipam/option"
 	ipamTypes "github.com/cilium/cilium/pkg/ipam/types"
+	"github.com/cilium/cilium/pkg/option"
 	"github.com/cilium/cilium/pkg/spanstat"
 )
 
@@ -343,6 +344,9 @@ func parseENI(iface *ec2_types.NetworkInterface, vpcs ipamTypes.VirtualNetworkMa
 			if subnet, ok := subnets[eni.Subnet.ID]; ok && subnet.CIDR != nil {
 				eni.Subnet.CIDR = subnet.CIDR.String()
 			}
+			if subnet, ok := subnets[eni.Subnet.ID]; ok && subnet.CIDRv6 != nil {
+				eni.Subnet.CIDRv6 = subnet.CIDRv6.String()
+			}
 		}
 	}
 
@@ -374,6 +378,10 @@ func parseENI(iface *ec2_types.NetworkInterface, vpcs ipamTypes.VirtualNetworkMa
 		}
 		eni.Addresses = append(eni.Addresses, ips...)
 		eni.Prefixes = append(eni.Prefixes, aws.ToString(prefix.Ipv4Prefix))
+	}
+
+	for _, prefix := range iface.Ipv6Prefixes {
+		eni.Prefixes = append(eni.Prefixes, aws.ToString(prefix.Ipv6Prefix))
 	}
 
 	for _, g := range iface.Groups {
@@ -460,6 +468,10 @@ func (c *Client) GetVpcs(ctx context.Context) (ipamTypes.VirtualNetworkMap, erro
 			}
 		}
 
+		for _, c := range v.Ipv6CidrBlockAssociationSet {
+			vpc.CIDRs = append(vpc.CIDRs, aws.ToString(c.Ipv6CidrBlock))
+		}
+
 		vpcs[vpc.ID] = vpc
 	}
 
@@ -498,16 +510,30 @@ func (c *Client) GetSubnets(ctx context.Context) (ipamTypes.SubnetMap, error) {
 	}
 
 	for _, s := range subnetList {
-		c, err := cidr.ParseCIDR(aws.ToString(s.CidrBlock))
-		if err != nil {
-			continue
-		}
-
 		subnet := &ipamTypes.Subnet{
 			ID:                 aws.ToString(s.SubnetId),
-			CIDR:               c,
 			AvailableAddresses: int(aws.ToInt32(s.AvailableIpAddressCount)),
 			Tags:               map[string]string{},
+		}
+		if option.Config.EnableIPv4 {
+			c, err := cidr.ParseCIDR(aws.ToString(s.CidrBlock))
+			if err != nil {
+				continue
+			}
+			subnet.CIDR = c
+		}
+		if option.Config.EnableIPv6 {
+			// As of 2022 September only 1 IPv6 CIDR can be associated with a subnet...
+			// Ref: https://docs.aws.amazon.com/vpc/latest/userguide/working-with-subnets.html#subnet-associate-ipv6-cidr
+			// ... but as it's defined as an array, the assumption that the first array
+			// element is the primary IPv6 CIDR may be incorrect in the future.
+			if len(s.Ipv6CidrBlockAssociationSet) > 0 {
+				c, err := cidr.ParseCIDR(aws.ToString(s.Ipv6CidrBlockAssociationSet[0].Ipv6CidrBlock))
+				if err != nil {
+					continue
+				}
+				subnet.CIDRv6 = c
+			}
 		}
 
 		if s.AvailabilityZone != nil {
@@ -540,7 +566,7 @@ func (c *Client) CreateNetworkInterface(ctx context.Context, toAllocate int32, s
 		Groups:      groups,
 	}
 	if allocatePrefixes {
-		input.Ipv4PrefixCount = aws.Int32(int32(ipPkg.PrefixCeil(int(toAllocate), option.ENIPDBlockSizeIPv4)))
+		input.Ipv4PrefixCount = aws.Int32(int32(ipPkg.PrefixCeil(int(toAllocate), ipamOption.ENIPDBlockSizeIPv4)))
 		log.Debugf("Creating interface with %v prefixes", input.Ipv4PrefixCount)
 	} else {
 		input.SecondaryPrivateIpAddressCount = aws.Int32(toAllocate)

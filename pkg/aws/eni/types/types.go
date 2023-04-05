@@ -255,6 +255,9 @@ type AwsSubnet struct {
 
 	// CIDR is the CIDR range associated with the subnet
 	CIDR string `json:"cidr,omitempty"`
+
+	// CIDRv6 is the IPv6 CIDR range associated with the subnet
+	CIDRv6 string `json:"ipv6-cidr,omitempty"`
 }
 
 // AwsVPC stores information regarding an AWS VPC

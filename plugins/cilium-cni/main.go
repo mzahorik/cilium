@@ -571,10 +571,15 @@ func cmdAdd(args *skel.CmdArgs) (err error) {
 
 	switch conf.IpamMode {
 	case ipamOption.IPAMENI, ipamOption.IPAMAzure, ipamOption.IPAMAlibabaCloud:
-		err = interfaceAdd(ipConfig, ipam.IPV4, conf)
-		if err != nil {
-			err = fmt.Errorf("unable to setup interface datapath: %s", err)
-			return
+		if conf.IpamMode == ipamOption.IPAMENI && ipv6IsEnabled(ipam) {
+			// ENI mode w/ IPv6 doesn't require the additional interface
+			// that IPv4 needs.
+		} else {
+			err = interfaceAdd(ipConfig, ipam.IPV4, conf)
+			if err != nil {
+				err = fmt.Errorf("unable to setup interface datapath: %s", err)
+				return
+			}
 		}
 	}
 

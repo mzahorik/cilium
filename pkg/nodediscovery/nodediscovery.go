@@ -497,6 +497,13 @@ func (n *NodeDiscovery) mutateNodeResource(nodeResource *ciliumv2.CiliumNode) er
 		// the operator.
 		// There is a chance that the operator won't be able to allocate these
 		// podCIDRs, resulting in an error in the CiliumNode status.
+	case ipamOption.IPAMENI:
+		if option.Config.EnableIPv6 {
+			// ENI in IPv6 mode uses the ClusterPoolV2 allocator, see
+			// comment above
+			break
+		}
+		fallthrough
 	default:
 		nodeResource.Spec.IPAM.PodCIDRs = []string{}
 		if cidr := node.GetIPv4AllocRange(); cidr != nil {

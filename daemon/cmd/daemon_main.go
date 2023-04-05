@@ -1363,6 +1363,11 @@ func initEnv() {
 		log.Fatalf("%s cannot be used with tunneling. Packets must be routed through the tunnel device.", option.EnableAutoDirectRoutingName)
 	}
 
+	if option.Config.IPAM == ipamOption.IPAMENI &&
+		option.Config.EnableIPv4 && option.Config.EnableIPv6 {
+		log.Fatalf("ENI IPAM mode cannot be used with IPv4 and IPv6 simultaneously. Set either %s or %s to false.", option.EnableIPv4Name, option.EnableIPv6Name)
+	}
+
 	initClockSourceOption()
 
 	if option.Config.EnableSRv6 {

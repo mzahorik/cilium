@@ -211,6 +211,9 @@ type Subnet struct {
 	// CIDR is the CIDR associated with the subnet
 	CIDR *cidr.CIDR
 
+	// CIDRv6 is the IPv6 CIDR associated with the subnet
+	CIDRv6 *cidr.CIDR
+
 	// AvailabilityZone is the availability zone of the subnet
 	AvailabilityZone string
 

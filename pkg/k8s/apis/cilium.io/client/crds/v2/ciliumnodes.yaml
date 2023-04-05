@@ -553,6 +553,10 @@ spec:
                             id:
                               description: ID is the ID of the subnet
                               type: string
+                            ipv6-cidr:
+                              description: CIDRv6 is the IPv6 CIDR range associated
+                                with the subnet
+                              type: string
                           type: object
                         tags:
                           additionalProperties:

@@ -901,7 +901,8 @@ func newDaemon(ctx context.Context, cleaner *daemonCleanup,
 		// in large clusters.
 		d.k8sWatcher.NodesInit(d.clientset)
 
-		if option.Config.IPAM == ipamOption.IPAMClusterPool || option.Config.IPAM == ipamOption.IPAMClusterPoolV2 {
+		if option.Config.IPAM == ipamOption.IPAMClusterPool || option.Config.IPAM == ipamOption.IPAMClusterPoolV2 ||
+			(option.Config.IPAM == ipamOption.IPAMENI && option.Config.EnableIPv6) {
 			// Create the CiliumNode custom resource. This call will block until
 			// the custom resource has been created
 			d.nodeDiscovery.UpdateCiliumNodeResource()

@@ -258,15 +258,21 @@ func (d *Daemon) allocateDatapathIPs(family types.NodeAddressingFamily) (routerI
 	if (option.Config.IPAM == ipamOption.IPAMENI ||
 		option.Config.IPAM == ipamOption.IPAMAlibabaCloud ||
 		option.Config.IPAM == ipamOption.IPAMAzure) && result != nil {
-		var routingInfo *linuxrouting.RoutingInfo
-		routingInfo, err = linuxrouting.NewRoutingInfo(result.GatewayIP, result.CIDRs,
-			result.PrimaryMAC, result.InterfaceNumber, option.Config.IPAM,
-			option.Config.EnableIPv4Masquerade)
-		if err != nil {
-			err = fmt.Errorf("failed to create router info %w", err)
-			return
+		if option.Config.IPAM == ipamOption.IPAMENI && option.Config.EnableIPv6 {
+			// IPv6-only clusters with ENI do not need the additional routing
+			// that is necessary for IPv4 clusters. Dual stack IPv4/IPv6
+			// clusters with ENI interfaces are not supported.
+		} else {
+			var routingInfo *linuxrouting.RoutingInfo
+			routingInfo, err = linuxrouting.NewRoutingInfo(result.GatewayIP, result.CIDRs,
+				result.PrimaryMAC, result.InterfaceNumber, option.Config.IPAM,
+				option.Config.EnableIPv4Masquerade)
+			if err != nil {
+				err = fmt.Errorf("failed to create router info %w", err)
+				return
+			}
+			node.SetRouterInfo(routingInfo)
 		}
-		node.SetRouterInfo(routingInfo)
 	}
 
 	return

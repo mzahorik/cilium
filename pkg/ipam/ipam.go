@@ -136,9 +136,16 @@ func NewIPAM(nodeAddressing types.NodeAddressing, c Configuration, owner Owner, 
 			ipam.IPv4Allocator = newClusterPoolAllocator(IPv4, c, owner, k8sEventReg, clientset)
 		}
 	case ipamOption.IPAMCRD, ipamOption.IPAMENI, ipamOption.IPAMAzure, ipamOption.IPAMAlibabaCloud:
-		log.Info("Initializing CRD-based IPAM")
 		if c.IPv6Enabled() {
-			ipam.IPv6Allocator = newCRDAllocator(IPv6, c, owner, clientset, k8sEventReg, mtuConfig)
+			if c.IPAMMode() == ipamOption.IPAMENI {
+				// Clusters in ENI mode running IPv6 use the ClusterPoolV2 allocator
+				// Dual stack clusters are not supported. This is enforced in config checks.
+				log.Info("Initializing ClusterPool v2 IPAM")
+				ipam.IPv6Allocator = newClusterPoolAllocator(IPv6, c, owner, k8sEventReg, clientset)
+			} else {
+				log.Info("Initializing CRD-based IPAM")
+				ipam.IPv6Allocator = newCRDAllocator(IPv6, c, owner, clientset, k8sEventReg, mtuConfig)
+			}
 		}
 
 		if c.IPv4Enabled() {

@@ -472,6 +472,11 @@ func (legacy *legacyOnLeader) onStart(_ hive.HookContext) error {
 
 	log.WithField(logfields.Mode, option.Config.IPAM).Info("Initializing IPAM")
 
+	if option.Config.IPAM == ipamOption.IPAMENI &&
+		option.Config.EnableIPv4 && option.Config.EnableIPv6 {
+		log.Fatalf("ENI IPAM mode cannot be used with IPv4 and IPv6 simultaneously. Set either %s or %s to false.", option.EnableIPv4Name, option.EnableIPv6Name)
+	}
+
 	switch ipamMode := option.Config.IPAM; ipamMode {
 	case ipamOption.IPAMAzure, ipamOption.IPAMENI, ipamOption.IPAMClusterPool, ipamOption.IPAMClusterPoolV2, ipamOption.IPAMAlibabaCloud:
 		alloc, providerBuiltin := allocatorProviders[ipamMode]

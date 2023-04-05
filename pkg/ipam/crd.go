@@ -686,7 +686,8 @@ func (a *crdAllocator) buildAllocationResult(ip net.IP, ipInfo *ipamTypes.Alloca
 				}
 				if eni.Subnet.CIDR != "" {
 					// The gateway for a subnet and VPC is always x.x.x.1
-					// Ref: https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html
+					// Ref: https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html
+					// Find "VPC router"
 					result.GatewayIP = deriveGatewayIP(eni.Subnet.CIDR, 1)
 				}
 				result.InterfaceNumber = strconv.Itoa(eni.Number)

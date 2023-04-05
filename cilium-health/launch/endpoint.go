@@ -320,14 +320,19 @@ func LaunchAsEndpoint(baseCtx context.Context,
 	}
 
 	if option.Config.IPAM == ipamOption.IPAMENI || option.Config.IPAM == ipamOption.IPAMAlibabaCloud {
-		// ENI mode does not support IPv6.
-		if err := routingConfig.Configure(
-			healthIP,
-			mtuConfig.GetDeviceMTU(),
-			option.Config.EgressMultiHomeIPRuleCompat,
-		); err != nil {
+		if option.Config.IPAM == ipamOption.IPAMENI && option.Config.EnableIPv6 {
+			// IPv6-only clusters with ENI do not need the additional routing
+			// that is necessary for IPv4 clusters. Dual stack IPv4/IPv6
+			// clusters with ENI interfaces are not supported.
+		} else {
+			if err := routingConfig.Configure(
+				healthIP,
+				mtuConfig.GetDeviceMTU(),
+				option.Config.EgressMultiHomeIPRuleCompat,
+			); err != nil {
 
-			return nil, fmt.Errorf("Error while configuring health endpoint rules and routes: %s", err)
+				return nil, fmt.Errorf("Error while configuring health endpoint rules and routes: %s", err)
+			}
 		}
 	}
 

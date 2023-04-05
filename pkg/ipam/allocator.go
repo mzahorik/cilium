@@ -336,7 +336,13 @@ func (ipam *IPAM) Dump() (allocv4 map[string]string, allocv6 map[string]string, 
 		}
 	}
 
-	status = strings.Join([]string{st4, st6}, ", ")
+	separator := ""
+
+	if ipam.IPv6Allocator != nil && ipam.IPv4Allocator != nil {
+		separator = ", "
+	}
+
+	status = strings.Join([]string{st4, st6}, separator)
 	if status == "" {
 		status = "Not running"
 	}
